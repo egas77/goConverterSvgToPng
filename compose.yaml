@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: on-failure
+
+  nginx:
+    image: nginx:1.25.4-alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:rw
+    ports:
+      - '33090:80'
+    restart: on-failure
