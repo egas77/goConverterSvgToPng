@@ -2,6 +2,7 @@ package main
 
 import (
 	"convertSvg/src/converter"
+	"encoding/base64"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"io"
@@ -14,6 +15,7 @@ func upload(c echo.Context) error {
 	// Source
 	r := c.Request()
 	method := c.QueryParam("method")
+	responseType := c.QueryParam("type")
 	body := r.Body
 	data, err := io.ReadAll(body)
 	defer func(body io.ReadCloser) {
@@ -24,7 +26,7 @@ func upload(c echo.Context) error {
 	}(body)
 
 	if err != nil {
-		return c.NoContent(400)
+		return c.String(400, "No found image data")
 	}
 
 	var output []byte
@@ -32,12 +34,18 @@ func upload(c echo.Context) error {
 	if method == "inkscape" || method == "1" {
 		output, err = svgConverter.Convert(data)
 		if err != nil {
-			return c.NoContent(400)
+			return c.String(500, "Inkscape failed")
 		}
 	} else {
-		return c.NoContent(400)
+		return c.String(400, "Invalid method")
 	}
-	return c.Blob(http.StatusOK, "image/png", output)
+	if responseType == "1" {
+		return c.Blob(http.StatusOK, "image/png", output)
+	} else if responseType == "2" {
+		base64Image := base64.StdEncoding.EncodeToString(output)
+		return c.String(http.StatusOK, base64Image)
+	}
+	return c.String(400, "Invalid type")
 }
 
 func main() {
